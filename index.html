@@ -75,6 +75,7 @@ header{
   background:none; border:none; color:var(--muted); cursor:pointer; padding:6px;
   border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px;
 }
+.dots-btn{font-size:20px; padding:8px;}
 .icon-btn:active{background:var(--card2);}
 .empty-state{text-align:center; color:var(--muted); padding:60px 20px; font-size:14px;}
 
@@ -174,6 +175,19 @@ header{
     <div class="sheet-actions">
       <button class="btn-secondary" id="eventCancelBtn">Annulla</button>
       <button class="btn-primary" id="eventSaveBtn">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event actions sheet (menu a puntini) -->
+<div class="overlay" id="eventActionsOverlay">
+  <div class="sheet">
+    <h2 id="eventActionsTitle">Appuntamento</h2>
+    <div class="menu-item" id="actionEdit"><i class="ti ti-edit"></i> Modifica</div>
+    <div class="menu-item" id="actionDup"><i class="ti ti-copy"></i> Duplica</div>
+    <div class="menu-item danger" id="actionDel"><i class="ti ti-trash"></i> Cancella</div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="eventActionsCloseBtn">Chiudi</button>
     </div>
   </div>
 </div>
@@ -374,11 +388,7 @@ function renderList(){
       </div>
       <div class="event-right">
         <div class="event-countdown ${cls}">${label}</div>
-        <div class="event-actions">
-          <button class="icon-btn" data-action="dup" title="Duplica"><i class="ti ti-copy"></i></button>
-          <button class="icon-btn" data-action="edit" title="Modifica"><i class="ti ti-edit"></i></button>
-          <button class="icon-btn" data-action="del" title="Elimina"><i class="ti ti-trash"></i></button>
-        </div>
+        <button class="icon-btn dots-btn" data-action="menu" title="Altre opzioni"><i class="ti ti-dots-vertical"></i></button>
       </div>
     </div>`;
   }).join('');
@@ -390,17 +400,37 @@ function escapeHtml(s){
 // refresh countdown labels every 30s without full reload
 setInterval(()=>{ if(_events.length) renderList(); }, 30000);
 
+let _actionEventId = null;
+
 $('listContainer').addEventListener('click', (e)=>{
   const btn = e.target.closest('.icon-btn');
   if(!btn) return;
   const card = e.target.closest('.event-card');
   const id = card.dataset.id;
-  const action = btn.dataset.action;
   const ev = _events.find(x=>x.id===id);
   if(!ev) return;
-  if(action === 'edit') openEventForm(ev);
-  if(action === 'del') deleteEvent(ev);
-  if(action === 'dup') duplicateEvent(ev);
+  _actionEventId = id;
+  $('eventActionsTitle').textContent = ev.name;
+  $('eventActionsOverlay').classList.add('show');
+});
+
+$('eventActionsCloseBtn').addEventListener('click', ()=> $('eventActionsOverlay').classList.remove('show'));
+$('eventActionsOverlay').addEventListener('click', (e)=>{ if(e.target.id==='eventActionsOverlay') $('eventActionsOverlay').classList.remove('show'); });
+
+$('actionEdit').addEventListener('click', ()=>{
+  $('eventActionsOverlay').classList.remove('show');
+  const ev = _events.find(x=>x.id===_actionEventId);
+  if(ev) openEventForm(ev);
+});
+$('actionDup').addEventListener('click', ()=>{
+  $('eventActionsOverlay').classList.remove('show');
+  const ev = _events.find(x=>x.id===_actionEventId);
+  if(ev) duplicateEvent(ev);
+});
+$('actionDel').addEventListener('click', ()=>{
+  $('eventActionsOverlay').classList.remove('show');
+  const ev = _events.find(x=>x.id===_actionEventId);
+  if(ev) deleteEvent(ev);
 });
 
 // ---------- Event form (create/edit) ----------
