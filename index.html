@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="theme-color" content="#1d3a5c">
+    <meta name="description" content="Gestisci i tuoi appuntamenti con conto alla rovescia, anche offline">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+    <title>Appuntamenti · PWA</title>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+    <style>
+        /* Reset & base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fa 0%, #e9edf5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .app {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 0.6rem 1.5rem;
+            border-radius: 60px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #2c3e50;
+        }
+
+        .sync-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .sync-dot.online {
+            background: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.4);
+        }
+
+        .sync-dot.offline {
+            background: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+        }
+
+        .sync-dot.syncing {
+            background: #f39c12;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.4);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+
+        .user-email {
+            font-weight: 500;
+            color: #1d3a5c;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #475569;
+            transition: 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 20px 40px -12px rgba(0, 20, 40, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Auth */
+        .auth-container {
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .auth-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #0b1a33;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: #4f6b89;
+            margin-bottom: 2rem;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .auth-form .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .auth-form .field label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #1d3a5c;
+            opacity: 0.8;
+        }
+
+        .auth-form .field input {
+            background: white;
+            border: 1px solid #d9e0eb;
+            border-radius: 60px;
+            padding: 0.8rem 1.2rem;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .auth-form .field input:focus {
+            outline: none;
+            border-color: #2a5c8a;
+            box-shadow: 0 0 0 3px rgba(42, 92, 138, 0.2);
+        }
+
+        .auth-form .btn {
+            background: #1d3a5c;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.8rem;
+            border-radius: 60px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 12px -6px rgba(0, 20, 40, 0.3);
+            margin-top: 0.5rem;
+        }
+
+        .auth-form .btn:hover {
+            background: #14304d;
+            transform: scale(0.98);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #4f6b89;
+        }
+
+        .auth-switch a {
+            color: #1d3a5c;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .auth-error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .auth-error.show {
+            display: block;
+        }
+
+        /* App content (hidden when not logged in) */
+        .app-content {
+            display: none;
+        }
+
+        .app-content.active {
+            display: block;
+        }
+
+        /* Event form */
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem 1.2rem;
+            align-items: flex-end;
+            margin-top: 1.2rem;
+        }
+
+        .field {
+            flex: 1 0 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .field label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #1d3a5c;
+            opacity: 0.8;
+        }
+
+        .field input {
+            background: white;
+            border: 1px solid #d9e0eb;
+            border-radius: 60px;
+            padding: 0.7rem 1.2rem;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+            width: 100%;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: #2a5c8a;
+            box-shadow: 0 0 0 3px rgba(42, 92, 138, 0.2);
+        }
+
+        .btn {
+            background: #1d3a5c;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.7rem 2rem;
+            border-radius: 60px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 12px -6px rgba(0, 20, 40, 0.3);
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .btn:hover {
+            background: #14304d;
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            background: #b13e4b;
+        }
+
+        .btn-danger:hover {
+            background: #922f3b;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #1d3a5c;
+            border: 1.5px solid #b7c8dd;
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: #e4ecf5;
+            border-color: #8aa2be;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .badge-count {
+            background: #1d3a5c;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.15rem 0.9rem;
+            border-radius: 40px;
+            margin-left: 0.75rem;
+        }
+
+        /* Event list */
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .event-item {
+            background: white;
+            border-radius: 80px;
+            padding: 0.8rem 1.5rem 0.8rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: 0.15s;
+            gap: 0.5rem 1rem;
+        }
+
+        .event-item:hover {
+            background: #ffffff;
+            box-shadow: 0 8px 20px -10px rgba(0, 20, 40, 0.12);
+            border-color: #cbd8e9;
+        }
+
+        .event-item.syncing {
+            opacity: 0.7;
+            border-left: 4px solid #f39c12;
+        }
+
+        .event-item .sync-status {
+            font-size: 0.7rem;
+            color: #f39c12;
+            display: none;
+        }
+
+        .event-item.syncing .sync-status {
+            display: inline;
+        }
+
+        .event-info {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.3rem 1rem;
+            flex: 2 1 200px;
+        }
+
+        .event-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #0b1a33;
+            word-break: break-word;
+        }
+
+        .event-datetime {
+            font-size: 0.9rem;
+            color: #3a5779;
+            background: #eef3fa;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            display: inline-block;
+        }
+
+        .event-countdown {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #0b2a4a;
+            background: #e4ebf5;
+            padding: 0.2rem 1.2rem;
+            border-radius: 60px;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            flex: 0 0 auto;
+            min-width: 110px;
+            text-align: center;
+        }
+
+        .event-countdown.urgent {
+            background: #fce3e6;
+            color: #ac2e3e;
+        }
+
+        .event-countdown.past {
+            background: #eaeef3;
+            color: #6b7d94;
+            opacity: 0.7;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex: 0 0 auto;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 0.1rem 0.5rem;
+            border-radius: 40px;
+            transition: 0.1s;
+            color: #677e9a;
+            line-height: 1;
+        }
+
+        .btn-icon:hover {
+            background: #eef3fa;
+            color: #1d3a5c;
+        }
+
+        .btn-icon.delete:hover {
+            background: #fce3e6;
+            color: #ac2e3e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #4f6b89;
+        }
+
+        .empty-state span {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .text-muted {
+            color: #4f6b89;
+            font-size: 0.9rem;
+        }
+
+        .mt-1 {
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 650px) {
+            .card {
+                padding: 1.5rem;
+            }
+            .event-item {
+                border-radius: 30px;
+                padding: 1rem 1.2rem;
+            }
+            .event-countdown {
+                min-width: 80px;
+                font-size: 1rem;
+            }
+            .form-grid .field {
+                flex: 1 0 140px;
+            }
+            .status-bar {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.6rem 1rem;
+            }
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="statusBar">
+            <div class="status-left">
+                <div class="sync-indicator">
+                    <span class="sync-dot offline" id="syncDot"></span>
+                    <span id="syncStatusText">Offline</span>
+                </div>
+                <span style="font-size:0.8rem;color:#64748b;" id="pendingCount"></span>
+            </div>
+            <div class="user-info hidden" id="userInfo">
+                <span class="user-email" id="userEmail"></span>
+                <button class="btn-logout" id="logoutBtn">Esci</button>
+            </div>
+        </div>
+
+        <!-- Auth Section -->
+        <div id="authSection">
+            <div class="card auth-container">
+                <h1 class="auth-title">📅 Appuntamenti</h1>
+                <p class="auth-subtitle">Accedi per gestire i tuoi eventi</p>
+
+                <div class="auth-error" id="authError"></div>
+
+                <form class="auth-form" id="authForm">
+                    <div class="field">
+                        <label for="authEmail">Email</label>
+                        <input type="email" id="authEmail" placeholder="tu@email.com" required>
+                    </div>
+                    <div class="field">
+                        <label for="authPassword">Password</label>
+                        <input type="password" id="authPassword" placeholder="••••••••" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn" id="authSubmitBtn">Accedi</button>
+                </form>
+
+                <div class="auth-switch">
+                    <span id="authSwitchText">Non hai un account?</span>
+                    <a id="authSwitchLink">Registrati</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Content -->
+        <div class="app-content" id="appContent">
+            <!-- Event Form -->
+            <div class="card">
+                <div class="flex-between">
+                    <h1 style="font-size:1.8rem;font-weight:600;color:#0b1a33;">
+                        📅 Prossimi appuntamenti
+                        <span class="badge-count" id="eventCounter">0</span>
+                    </h1>
+                    <button class="btn btn-outline" id="clearAllBtn" style="font-size:0.85rem;">🗑️ Rimuovi tutti</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="eventName">Nome evento</label>
+                        <input type="text" id="eventName" placeholder="es. Dentista, esame...">
+                    </div>
+                    <div class="field">
+                        <label for="eventDate">Data</label>
+                        <input type="date" id="eventDate">
+                    </div>
+                    <div class="field">
+                        <label for="eventTime">Ora</label>
+                        <input type="time" id="eventTime" value="09:00">
+                    </div>
+                    <button class="btn" id="addEventBtn">➕ Aggiungi</button>
+                </div>
+            </div>
+
+            <!-- Event List -->
+            <div class="card" style="padding-bottom: 1.8rem;">
+                <div id="eventListContainer">
+                    <div class="empty-state" id="emptyState">
+                        <span>📭</span>
+                        <p>Nessun appuntamento in agenda.<br>Aggiungi il tuo primo evento!</p>
+                    </div>
+                    <div class="event-list" id="eventList"></div>
+                </div>
+                <div class="text-muted" style="margin-top:1.2rem;font-size:0.85rem;text-align:right;">
+                    ⏳ aggiornamento automatico ogni minuto
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 1. SUPABASE CONFIG
+        // ============================================================
+        // 🔑 SOSTITUISCI CON LE TUE CHIAVI (sono pubbliche per design, RLS protegge i dati)
+        const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================================
+        // 2. STATO APPLICAZIONE
+        // ============================================================
+        const STATE = {
+            user: null,
+            events: [], // tutti gli eventi dell'utente (sincronizzati)
+            syncQueue: [], // operazioni in attesa di sync
+            isOnline: navigator.onLine,
+            isSyncing: false,
+        };
+
+        // ============================================================
+        // 3. DOM REFS
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const dom = {
+            // Auth
+            authSection: $('authSection'),
+            appContent: $('appContent'),
+            authForm: $('authForm'),
+            authEmail: $('authEmail'),
+            authPassword: $('authPassword'),
+            authSubmitBtn: $('authSubmitBtn'),
+            authSwitchLink: $('authSwitchLink'),
+            authSwitchText: $('authSwitchText'),
+            authError: $('authError'),
+
+            // User
+            userInfo: $('userInfo'),
+            userEmail: $('userEmail'),
+            logoutBtn: $('logoutBtn'),
+
+            // Sync status
+            syncDot: $('syncDot'),
+            syncStatusText: $('syncStatusText'),
+            pendingCount: $('pendingCount'),
+
+            // Events
+            eventList: $('eventList'),
+            emptyState: $('emptyState'),
+            eventCounter: $('eventCounter'),
+            eventName: $('eventName'),
+            eventDate: $('eventDate'),
+            eventTime: $('eventTime'),
+            addEventBtn: $('addEventBtn'),
+            clearAllBtn: $('clearAllBtn'),
+        };
+
+        // ============================================================
+        // 4. UTILITY
+        // ============================================================
+        function generateId() {
+            return crypto.randomUUID();
+        }
+
+        function getEventTimestamp(dateStr, timeStr) {
+            if (!dateStr) return null;
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const [hours, minutes] = timeStr ? timeStr.split(':').map(Number) : [0, 0];
+            return new Date(year, month - 1, day, hours || 0, minutes || 0).getTime();
+        }
+
+        function formatCountdown(msDiff) {
+            if (msDiff < 0) {
+                const abs = Math.abs(msDiff);
+                const days = Math.floor(abs / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((abs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60));
+                if (days > 0) return `⏳ ${days}g ${hours}h fa`;
+                if (hours > 0) return `⏳ ${hours}h ${minutes}m fa`;
+                if (minutes > 0) return `⏳ ${minutes}m fa`;
+                return `⏳ ora`;
+            } else {
+                const days = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((msDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((msDiff % (1000 * 60 * 60)) / (1000 * 60));
+                if (days > 0) return `⏳ ${days}g ${hours}h`;
+                if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
+                if (minutes > 0) return `⏳ ${minutes}m`;
+                return `⏳ tra poco`;
+            }
+        }
+
+        function getCountdownClass(msDiff) {
+            if (msDiff < 0) return 'past';
+            if (msDiff < 1000 * 60 * 60 * 24) return 'urgent';
+            return '';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                if (m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            return dateStr.replace(/-/g, '/');
+        }
+
+        function isEventActive(ev) {
+            return !ev.deleted_at;
+        }
+
+        function getActiveEvents() {
+            return STATE.events.filter(isEventActive);
+        }
+
+        function getSortedEvents() {
+            const active = getActiveEvents();
+            return [...active].sort((a, b) => {
+                const tsA = getEventTimestamp(a.date, a.time) || 0;
+                const tsB = getEventTimestamp(b.date, b.time) || 0;
+                return tsA - tsB;
+            });
+        }
+
+        // ============================================================
+        // 5. LOCAL STORAGE (persistenza offline)
+        // ============================================================
+        function loadFromStorage() {
+            try {
+                const stored = localStorage.getItem('app_events');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        STATE.events = parsed;
+                    }
+                }
+                const queue = localStorage.getItem('app_sync_queue');
+                if (queue) {
+                    const parsed = JSON.parse(queue);
+                    if (Array.isArray(parsed)) {
+                        STATE.syncQueue = parsed;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem('app_events', JSON.stringify(STATE.events));
+                localStorage.setItem('app_sync_queue', JSON.stringify(STATE.syncQueue));
+            } catch (e) { /* ignore */ }
+        }
+
+        // ============================================================
+        // 6. SYNC QUEUE (persistente)
+        // ============================================================
+        function addToSyncQueue(operation) {
+            STATE.syncQueue.push({
+                ...operation,
+                timestamp: new Date().toISOString(),
+            });
+            saveToStorage();
+            updateSyncStatus();
+            // Tenta sync immediata
+            processSyncQueue();
+        }
+
+        function removeFromSyncQueue(index) {
+            STATE.syncQueue.splice(index, 1);
+            saveToStorage();
+            updateSyncStatus();
+        }
+
+        async function processSyncQueue() {
+            if (STATE.isSyncing || !STATE.user) return;
+            if (STATE.syncQueue.length === 0) return;
+            if (!STATE.isOnline) {
+                updateSyncStatus();
+                return;
+            }
+
+            STATE.isSyncing = true;
+            updateSyncStatus();
+
+            let i = 0;
+            while (i < STATE.syncQueue.length) {
+                const op = STATE.syncQueue[i];
+                try {
+                    switch (op.type) {
+                        case 'create':
+                        case 'update':
+                            await syncEvent(op.data);
+                            break;
+                        case 'delete':
+                            await syncDeleteEvent(op.data);
+                            break;
+                    }
+                    // Rimosso con successo
+                    removeFromSyncQueue(i);
+                } catch (err) {
+                    console.warn('Sync failed for operation:', op, err);
+                    i++; // passa al prossimo
+                }
+            }
+
+            STATE.isSyncing = false;
+            updateSyncStatus();
+            render();
+        }
+
+        // ============================================================
+        // 7. SUPABASE OPERATIONS
+        // ============================================================
+        async function syncEvent(eventData) {
+            if (!STATE.user) return;
+
+            const { id, name, date, time, updated_at, deleted_at } = eventData;
+
+            const payload = {
+                id,
+                user_id: STATE.user.id,
+                name,
+                date,
+                time,
+                updated_at: updated_at || new Date().toISOString(),
+                deleted_at: deleted_at || null,
+            };
+
+            // Upsert: se esiste, aggiorna; se non esiste, crea
+            const { error } = await supabase
+                .from('events')
+                .upsert(payload, { onConflict: 'id' });
+
+            if (error) throw error;
+        }
+
+        async function syncDeleteEvent(eventData) {
+            if (!STATE.user) return;
+
+            // Soft-delete: aggiorna deleted_at
+            const { error } = await supabase
+                .from('events')
+                .update({
+                    deleted_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', eventData.id)
+                .eq('user_id', STATE.user.id);
+
+            if (error) throw error;
+        }
+
+        async function fetchRemoteEvents() {
+            if (!STATE.user) return;
+
+            const { data, error } = await supabase
+                .from('events')
+                .select('*')
+                .eq('user_id', STATE.user.id)
+                .is('deleted_at', null);
+
+            if (error) throw error;
+
+            // Unisce con gli eventi locali (risoluzione conflitti: ultima scrittura vince)
+            const localMap = {};
+            STATE.events.forEach(ev => {
+                if (isEventActive(ev)) {
+                    localMap[ev.id] = ev;
+                }
+            });
+
+            const remoteMap = {};
+            data.forEach(ev => {
+                remoteMap[ev.id] = ev;
+            });
+
+            // Merge: prevale l'updated_at più recente
+            const merged = [];
+            const allIds = new Set([...Object.keys(localMap), ...Object.keys(remoteMap)]);
+
+            for (const id of allIds) {
+                const local = localMap[id];
+                const remote = remoteMap[id];
+
+                if (local && remote) {
+                    // Conflitto: vince il più recente
+                    const localTime = new Date(local.updated_at || 0).getTime();
+                    const remoteTime = new Date(remote.updated_at || 0).getTime();
+                    merged.push(localTime >= remoteTime ? { ...local } : { ...remote });
+                } else if (local) {
+                    merged.push({ ...local });
+                } else if (remote) {
+                    merged.push({ ...remote });
+                }
+            }
+
+            STATE.events = merged;
+            saveToStorage();
+        }
+
+        // ============================================================
+        // 8. CRUD LOCALE (offline-first)
+        // ============================================================
+        function createEventLocal(name, date, time) {
+            const now = new Date().toISOString();
+            const event = {
+                id: generateId(),
+                name: name.trim(),
+                date: date,
+                time: time || '00:00',
+                created_at: now,
+                updated_at: now,
+                deleted_at: null,
+            };
+
+            STATE.events.push(event);
+            saveToStorage();
+
+            // Accoda per sync
+            addToSyncQueue({
+                type: 'create',
+                data: { ...event },
+            });
+
+            render();
+            return event;
+        }
+
+        function updateEventLocal(id, updates) {
+            const idx = STATE.events.findIndex(ev => ev.id === id);
+            if (idx === -1) return null;
+
+            const old = STATE.events[idx];
+            const updated = {
+                ...old,
+                ...updates,
+                updated_at: new Date().toISOString(),
+            };
+            STATE.events[idx] = updated;
+            saveToStorage();
+
+            // Accoda per sync (se non è già in coda)
+            const inQueue = STATE.syncQueue.some(op => op.data.id === id && op.type !== 'delete');
+            if (!inQueue) {
+                addToSyncQueue({
+                    type: 'update',
+                    data: { ...updated },
+                });
+            }
+
+            render();
+            return updated;
+        }
+
+        function deleteEventLocal(id) {
+            const idx = STATE.events.findIndex(ev => ev.id === id);
+            if (idx === -1) return false;
+
+            const event = STATE.events[idx];
+            // Soft-delete
+            STATE.events[idx] = {
+                ...event,
+                deleted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            saveToStorage();
+
+            // Accoda per sync
+            addToSyncQueue({
+                type: 'delete',
+                data: { id },
+            });
+
+            render();
+            return true;
+        }
+
+        function clearAllEventsLocal() {
+            const active = getActiveEvents();
+            if (active.length === 0) return;
+
+            // Soft-delete di tutti
+            const now = new Date().toISOString();
+            active.forEach(ev => {
+                const idx = STATE.events.findIndex(e => e.id === ev.id);
+                if (idx !== -1) {
+                    STATE.events[idx] = {
+                        ...STATE.events[idx],
+                        deleted_at: now,
+                        updated_at: now,
+                    };
+                    addToSyncQueue({
+                        type: 'delete',
+                        data: { id: ev.id },
+                    });
+                }
+            });
+
+            saveToStorage();
+            render();
+        }
+
+        // ============================================================
+        // 9. RENDER
+        // ============================================================
+        function render() {
+            const sorted = getSortedEvents();
+            const activeCount = sorted.length;
+
+            // Aggiorna contatore
+            dom.eventCounter.textContent = activeCount;
+
+            // Mostra/nascondi empty state
+            if (activeCount === 0) {
+                dom.emptyState.style.display = 'block';
+                dom.eventList.innerHTML = '';
+                return;
+            } else {
+                dom.emptyState.style.display = 'none';
+            }
+
+            const now = Date.now();
+            let html = '';
+
+            for (const ev of sorted) {
+                const ts = getEventTimestamp(ev.date, ev.time);
+                let countdownText = '🕒 data non valida';
+                let countdownClass = '';
+                let msDiff = 0;
+
+                if (ts !== null) {
+                    msDiff = ts - now;
+                    countdownText = formatCountdown(msDiff);
+                    countdownClass = getCountdownClass(msDiff);
+                }
+
+                // Verifica se l'evento è in coda di sync
+                const inQueue = STATE.syncQueue.some(op => op.data.id === ev.id);
+                const syncingClass = inQueue ? 'syncing' : '';
+
+                html += `
+                    <div class="event-item ${syncingClass}" data-id="${ev.id}">
+                        <div class="event-info">
+                            <span class="event-name">${escapeHtml(ev.name || 'Evento')}</span>
+                            <span class="event-datetime">📆 ${formatDate(ev.date)} · ${ev.time || '—'}</span>
+                            ${inQueue ? '<span class="sync-status">⏳ in attesa</span>' : ''}
+                        </div>
+                        <div class="event-countdown ${countdownClass}">${countdownText}</div>
+                        <div class="event-actions">
+                            <button class="btn-icon delete" data-id="${ev.id}" title="Rimuovi evento">✕</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            dom.eventList.innerHTML = html;
+
+            // Attach delete listeners
+            document.querySelectorAll('.event-item .delete').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    if (id && confirm('Rimuovere questo appuntamento?')) {
+                        deleteEventLocal(id);
+                    }
+                });
+            });
+        }
+
+        // ============================================================
+        // 10. SYNC STATUS UI
+        // ============================================================
+        function updateSyncStatus() {
+            const dot = dom.syncDot;
+            const text = dom.syncStatusText;
+
+            if (!STATE.user) {
+                dot.className = 'sync-dot offline';
+                text.textContent = 'Non autenticato';
+                dom.pendingCount.textContent = '';
+                return;
+            }
+
+            const pending = STATE.syncQueue.length;
+
+            if (pending > 0 && STATE.isOnline) {
+                dot.className = 'sync-dot syncing';
+                text.textContent = `Sincronizzazione (${pending} in coda)`;
+                dom.pendingCount.textContent = `⏳ ${pending} in attesa`;
+            } else if (pending > 0 && !STATE.isOnline) {
+                dot.className = 'sync-dot offline';
+                text.textContent = `Offline - ${pending} in coda`;
+                dom.pendingCount.textContent = `⏳ ${pending} in attesa`;
+            } else if (STATE.isOnline) {
+                dot.className = 'sync-dot online';
+                text.textContent = 'Online · sincronizzato';
+                dom.pendingCount.textContent = '';
+            } else {
+                dot.className = 'sync-dot offline';
+                text.textContent = 'Offline';
+                dom.pendingCount.textContent = '';
+            }
+        }
+
+        // ============================================================
+        // 11. AUTH
+        // ============================================================
+        let isLoginMode = true;
+
+        function setAuthMode(login) {
+            isLoginMode = login;
+            dom.authSubmitBtn.textContent = login ? 'Accedi' : 'Registrati';
+            dom.authSwitchText.textContent = login ? 'Non hai un account?' : 'Hai già un account?';
+            dom.authSwitchLink.textContent = login ? 'Registrati' : 'Accedi';
+            dom.authError.classList.remove('show');
+            dom.authError.textContent = '';
+        }
+
+        function showAuthError(message) {
+            dom.authError.textContent = message;
+            dom.authError.classList.add('show');
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = dom.authEmail.value.trim();
+            const password = dom.authPassword.value;
+
+            if (!email || !password) {
+                showAuthError('Inserisci email e password.');
+                return;
+            }
+
+            dom.authSubmitBtn.disabled = true;
+            dom.authSubmitBtn.textContent = '⏳...';
+
+            try {
+                let result;
+                if (isLoginMode) {
+                    result = await supabase.auth.signInWithPassword({ email, password });
+                } else {
+                    result = await supabase.auth.signUp({ email, password });
+                }
+
+                if (result.error) {
+                    showAuthError(result.error.message);
+                    dom.authSubmitBtn.disabled = false;
+                    dom.authSubmitBtn.textContent = isLoginMode ? 'Accedi' : 'Registrati';
+                    return;
+                }
+
+                // Successo
+                dom.authError.classList.remove('show');
+                dom.authSubmitBtn.disabled = false;
+                dom.authSubmitBtn.textContent = isLoginMode ? 'Accedi' : 'Registrati';
+
+                // Se è registrazione, potrebbe essere conferma email
+                if (!isLoginMode && result.data?.user?.identities?.length === 0) {
+                    showAuthError('Utente già esistente. Prova ad accedere.');
+                    return;
+                }
+
+                // Login automatico (se signUp con conferma email, potrebbe non essere automatico)
+                if (result.data?.user) {
+                    await onAuthSuccess(result.data.user);
+                }
+
+            } catch (err) {
+                showAuthError('Errore di connessione. Riprova.');
+                console.error(err);
+                dom.authSubmitBtn.disabled = false;
+                dom.authSubmitBtn.textContent = isLoginMode ? 'Accedi' : 'Registrati';
+            }
+        }
+
+        async function onAuthSuccess(user) {
+            STATE.user = user;
+            dom.authSection.style.display = 'none';
+            dom.appContent.classList.add('active');
+            dom.userInfo.classList.remove('hidden');
+            dom.userEmail.textContent = user.email;
+
+            // Carica dati
+            await loadUserData();
+
+            // Processa sync
+            processSyncQueue();
+
+            updateSyncStatus();
+        }
+
+        async function loadUserData() {
+            // Carica da localStorage
+            loadFromStorage();
+
+            // Tenta fetch remoto
+            if (STATE.isOnline) {
+                try {
+                    await fetchRemoteEvents();
+                } catch (err) {
+                    console.warn('Impossibile caricare dati remoti:', err);
+                }
+            }
+
+            render();
+            updateSyncStatus();
+        }
+
+        function handleLogout() {
+            if (confirm('Sei sicuro di voler uscire?')) {
+                STATE.user = null;
+                STATE.events = [];
+                STATE.syncQueue = [];
+                localStorage.removeItem('app_events');
+                localStorage.removeItem('app_sync_queue');
+                dom.authSection.style.display = 'block';
+                dom.appContent.classList.remove('active');
+                dom.userInfo.classList.add('hidden');
+                render();
+                updateSyncStatus();
+            }
+        }
+
+        // ============================================================
+        // 12. NETWORK EVENTS
+        // ============================================================
+        function handleNetworkChange() {
+            STATE.isOnline = navigator.onLine;
+            updateSyncStatus();
+
+            if (STATE.isOnline && STATE.user) {
+                // Riconnessione: sync e fetch
+                processSyncQueue();
+                if (STATE.syncQueue.length === 0) {
+                    // Se non c'è coda, fetch aggiornamenti
+                    fetchRemoteEvents().then(() => {
+                        render();
+                    }).catch(console.warn);
+                }
+            }
+        }
+
+        // ============================================================
+        // 13. INIT
+        // ============================================================
+        async function init() {
+            // Set default date
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            dom.eventDate.value = tomorrow.toISOString().split('T')[0];
+
+            // Auth switch
+            dom.authSwitchLink.addEventListener('click', () => {
+                setAuthMode(!isLoginMode);
+            });
+
+            // Auth form
+            dom.authForm.addEventListener('submit', handleAuthSubmit);
+
+            // Logout
+            dom.logoutBtn.addEventListener('click', handleLogout);
+
+            // Add event
+            dom.addEventBtn.addEventListener('click', () => {
+                const name = dom.eventName.value.trim();
+                const date = dom.eventDate.value;
+                const time = dom.eventTime.value;
+
+                if (!name) {
+                    alert('Inserisci un nome per l\'evento.');
+                    return;
+                }
+                if (!date) {
+                    alert('Seleziona una data valida.');
+                    return;
+                }
+
+                createEventLocal(name, date, time);
+                dom.eventName.value = '';
+                dom.eventName.focus();
+            });
+
+            dom.eventName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    dom.addEventBtn.click();
+                }
+            });
+
+            // Clear all
+            dom.clearAllBtn.addEventListener('click', () => {
+                const active = getActiveEvents();
+                if (active.length === 0) return;
+                if (confirm('Rimuovere TUTTI gli appuntamenti?')) {
+                    clearAllEventsLocal();
+                }
+            });
+
+            // Network events
+            window.addEventListener('online', handleNetworkChange);
+            window.addEventListener('offline', handleNetworkChange);
+
+            // Periodic sync fallback (ogni 20s)
+            setInterval(() => {
+                if (STATE.user && STATE.isOnline) {
+                    processSyncQueue();
+                }
+                // Aggiorna countdown ogni minuto
+                render();
+            }, 20000);
+
+            // Aggiorna countdown visivo ogni 10s
+            setInterval(() => {
+                render();
+            }, 10000);
+
+            // Check session esistente
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                await onAuthSuccess(session.user);
+            } else {
+                dom.authSection.style.display = 'block';
+                dom.appContent.classList.remove('active');
+                dom.userInfo.classList.add('hidden');
+                setAuthMode(true);
+                updateSyncStatus();
+            }
+        }
+
+        // Avvia app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
