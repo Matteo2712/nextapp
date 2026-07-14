@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <meta name="theme-color" content="#1d3a5c">
-    <meta name="description" content="Gestisci i tuoi appuntamenti con conto alla rovescia, anche offline">
+    <meta name="description" content="Gestisci i tuoi appuntamenti con conto alla rovescia">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
-    <title>Appuntamenti · PWA</title>
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    <title>NextApp</title>
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
@@ -23,69 +23,83 @@
         }
 
         body {
-            background: linear-gradient(145deg, #f5f7fa 0%, #e9edf5 100%);
+            background: #f0f2f5;
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            padding: 1rem;
+            padding: 0;
+            margin: 0;
         }
 
         .app {
-            max-width: 1000px;
+            max-width: 800px;
             width: 100%;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Status bar */
-        .status-bar {
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 0.6rem 1.5rem;
-            border-radius: 60px;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .status-left {
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1d3a5c;
+            letter-spacing: -0.5px;
+        }
+
+        .app-title span {
+            color: #2a5c8a;
+        }
+
+        .user-section {
             display: flex;
             align-items: center;
             gap: 0.8rem;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+            border-radius: 40px;
+            transition: background 0.2s;
+            position: relative;
         }
 
-        .sync-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: #2c3e50;
+        .user-section:hover {
+            background: #f0f2f5;
         }
 
         .sync-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
-            transition: all 0.3s ease;
             flex-shrink: 0;
         }
 
         .sync-dot.online {
-            background: #27ae60;
-            box-shadow: 0 0 8px rgba(39, 174, 96, 0.4);
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
         }
 
         .sync-dot.offline {
-            background: #e74c3c;
-            box-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
         }
 
         .sync-dot.syncing {
-            background: #f39c12;
-            box-shadow: 0 0 8px rgba(243, 156, 18, 0.4);
+            background: #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
             animation: pulse 1s infinite;
         }
 
@@ -99,339 +113,79 @@
             }
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: #2c3e50;
-        }
-
         .user-email {
-            font-weight: 500;
-            color: #1d3a5c;
-        }
-
-        .btn-logout {
-            background: transparent;
-            border: 1px solid #cbd5e1;
-            padding: 0.3rem 1rem;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            color: #475569;
-            transition: 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #fee2e2;
-            border-color: #ef4444;
-            color: #dc2626;
-        }
-
-        /* Card */
-        .card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border-radius: 2rem;
-            padding: 2rem;
-            box-shadow: 0 20px 40px -12px rgba(0, 20, 40, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            margin-bottom: 1.5rem;
-        }
-
-        /* Auth */
-        .auth-container {
-            max-width: 400px;
-            margin: 2rem auto;
-        }
-
-        .auth-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #0b1a33;
-            margin-bottom: 0.5rem;
-            text-align: center;
-        }
-
-        .auth-subtitle {
-            text-align: center;
-            color: #4f6b89;
-            margin-bottom: 2rem;
-        }
-
-        .auth-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .auth-form .field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
-
-        .auth-form .field label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: #1d3a5c;
-            opacity: 0.8;
-        }
-
-        .auth-form .field input {
-            background: white;
-            border: 1px solid #d9e0eb;
-            border-radius: 60px;
-            padding: 0.8rem 1.2rem;
-            font-size: 0.95rem;
-            transition: 0.2s;
-            width: 100%;
-        }
-
-        .auth-form .field input:focus {
-            outline: none;
-            border-color: #2a5c8a;
-            box-shadow: 0 0 0 3px rgba(42, 92, 138, 0.2);
-        }
-
-        .auth-form .btn {
-            background: #1d3a5c;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 0.8rem;
-            border-radius: 60px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.15s;
-            box-shadow: 0 6px 12px -6px rgba(0, 20, 40, 0.3);
-            margin-top: 0.5rem;
-        }
-
-        .auth-form .btn:hover {
-            background: #14304d;
-            transform: scale(0.98);
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: #4f6b89;
-        }
-
-        .auth-switch a {
-            color: #1d3a5c;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .auth-error {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .auth-error.show {
-            display: block;
-        }
-
-        /* App content (hidden when not logged in) */
-        .app-content {
-            display: none;
-        }
-
-        .app-content.active {
-            display: block;
-        }
-
-        /* Event form */
-        .form-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem 1.2rem;
-            align-items: flex-end;
-            margin-top: 1.2rem;
-        }
-
-        .field {
-            flex: 1 0 160px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-        }
-
-        .field label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: #1d3a5c;
-            opacity: 0.8;
-        }
-
-        .field input {
-            background: white;
-            border: 1px solid #d9e0eb;
-            border-radius: 60px;
-            padding: 0.7rem 1.2rem;
-            font-size: 0.95rem;
-            transition: 0.2s;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-            width: 100%;
-        }
-
-        .field input:focus {
-            outline: none;
-            border-color: #2a5c8a;
-            box-shadow: 0 0 0 3px rgba(42, 92, 138, 0.2);
-        }
-
-        .btn {
-            background: #1d3a5c;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 0.7rem 2rem;
-            border-radius: 60px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.15s;
-            box-shadow: 0 6px 12px -6px rgba(0, 20, 40, 0.3);
-            letter-spacing: 0.02em;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            color: #374151;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
-            flex: 0 0 auto;
         }
 
-        .btn:hover {
-            background: #14304d;
-            transform: scale(0.97);
-        }
-
-        .btn-danger {
-            background: #b13e4b;
-        }
-
-        .btn-danger:hover {
-            background: #922f3b;
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #1d3a5c;
-            border: 1.5px solid #b7c8dd;
-            box-shadow: none;
-        }
-
-        .btn-outline:hover {
-            background: #e4ecf5;
-            border-color: #8aa2be;
-        }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .badge-count {
-            background: #1d3a5c;
-            color: white;
-            font-size: 0.9rem;
-            font-weight: 500;
-            padding: 0.15rem 0.9rem;
-            border-radius: 40px;
-            margin-left: 0.75rem;
-        }
-
-        /* Event list */
-        .event-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            margin-top: 0.5rem;
+        /* Event List */
+        .event-list-container {
+            flex: 1;
+            padding: 1rem 1rem 6rem;
+            overflow-y: auto;
         }
 
         .event-item {
             background: white;
-            border-radius: 80px;
-            padding: 0.8rem 1.5rem 0.8rem 2rem;
+            border-radius: 16px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.8rem;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            transition: 0.15s;
-            gap: 0.5rem 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s;
+            gap: 0.8rem;
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
 
         .event-item:hover {
-            background: #ffffff;
-            box-shadow: 0 8px 20px -10px rgba(0, 20, 40, 0.12);
-            border-color: #cbd8e9;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
         }
 
         .event-item.syncing {
-            opacity: 0.7;
-            border-left: 4px solid #f39c12;
-        }
-
-        .event-item .sync-status {
-            font-size: 0.7rem;
-            color: #f39c12;
-            display: none;
-        }
-
-        .event-item.syncing .sync-status {
-            display: inline;
+            opacity: 0.6;
+            border-left: 4px solid #f59e0b;
         }
 
         .event-info {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.3rem 1rem;
-            flex: 2 1 200px;
+            flex: 1;
+            min-width: 0;
         }
 
         .event-name {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #0b1a33;
-            word-break: break-word;
+            margin-bottom: 0.2rem;
         }
 
         .event-datetime {
-            font-size: 0.9rem;
-            color: #3a5779;
-            background: #eef3fa;
-            padding: 0.2rem 0.9rem;
-            border-radius: 40px;
-            display: inline-block;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .event-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-shrink: 0;
         }
 
         .event-countdown {
             font-weight: 600;
-            font-size: 1.2rem;
+            font-size: 0.9rem;
             color: #0b2a4a;
-            background: #e4ebf5;
-            padding: 0.2rem 1.2rem;
-            border-radius: 60px;
-            letter-spacing: 0.01em;
+            background: #eef2f6;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
             white-space: nowrap;
-            flex: 0 0 auto;
-            min-width: 110px;
+            min-width: 80px;
             text-align: center;
         }
 
@@ -448,201 +202,539 @@
 
         .event-actions {
             display: flex;
-            gap: 0.4rem;
-            flex: 0 0 auto;
+            gap: 0.3rem;
         }
 
         .btn-icon {
             background: transparent;
             border: none;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             cursor: pointer;
-            padding: 0.1rem 0.5rem;
-            border-radius: 40px;
-            transition: 0.1s;
-            color: #677e9a;
+            padding: 0.3rem 0.4rem;
+            border-radius: 8px;
+            transition: 0.15s;
+            color: #6b7280;
             line-height: 1;
         }
 
         .btn-icon:hover {
-            background: #eef3fa;
+            background: #f3f4f6;
             color: #1d3a5c;
         }
 
+        .btn-icon.edit:hover {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
         .btn-icon.delete:hover {
-            background: #fce3e6;
-            color: #ac2e3e;
+            background: #fee2e2;
+            color: #dc2626;
         }
 
         .empty-state {
             text-align: center;
-            padding: 3rem 1rem;
-            color: #4f6b89;
+            padding: 4rem 1rem;
+            color: #6b7280;
         }
 
         .empty-state span {
-            font-size: 2.5rem;
+            font-size: 3rem;
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .empty-state p {
             font-size: 1rem;
+        }
+
+        /* FAB - Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #1d3a5c;
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(29, 58, 92, 0.3);
+            transition: all 0.2s;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px rgba(29, 58, 92, 0.4);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal / Popup */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #0b1a33;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal .field {
+            margin-bottom: 1rem;
+        }
+
+        .modal .field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #1d3a5c;
             opacity: 0.8;
+            margin-bottom: 0.2rem;
         }
 
-        .text-muted {
-            color: #4f6b89;
+        .modal .field input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            background: #fafafa;
+        }
+
+        .modal .field input:focus {
+            outline: none;
+            border-color: #1d3a5c;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(29, 58, 92, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions .btn-primary {
+            background: #1d3a5c;
+            color: white;
+        }
+
+        .modal-actions .btn-primary:hover {
+            background: #14304d;
+        }
+
+        .modal-actions .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-actions .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* User Modal (email click) */
+        .user-modal .modal {
+            max-width: 380px;
+        }
+
+        .user-modal .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .user-modal .user-email-display {
             font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            word-break: break-all;
         }
 
-        .mt-1 {
-            margin-top: 1rem;
+        .user-modal .btn-block {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .user-modal .btn-block:hover {
+            transform: scale(0.98);
+        }
+
+        .user-modal .btn-export {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .user-modal .btn-export:hover {
+            background: #bfdbfe;
+        }
+
+        .user-modal .btn-import {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .user-modal .btn-import:hover {
+            background: #a7f3d0;
+        }
+
+        .user-modal .btn-logout {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .user-modal .btn-logout:hover {
+            background: #fecaca;
+        }
+
+        .user-modal .file-input-wrapper {
+            display: none;
+        }
+
+        /* Auth */
+        .auth-container {
+            max-width: 400px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .auth-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0b1a33;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .auth-error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: none;
+            margin-bottom: 1rem;
+        }
+
+        .auth-error.show {
+            display: block;
+        }
+
+        .auth-form .field {
+            margin-bottom: 1rem;
+        }
+
+        .auth-form .field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #1d3a5c;
+            opacity: 0.8;
+            margin-bottom: 0.2rem;
+        }
+
+        .auth-form .field input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            background: #fafafa;
+        }
+
+        .auth-form .field input:focus {
+            outline: none;
+            border-color: #1d3a5c;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(29, 58, 92, 0.1);
+        }
+
+        .auth-form .btn {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 12px;
+            background: #1d3a5c;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .auth-form .btn:hover {
+            background: #14304d;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .auth-switch a {
+            color: #1d3a5c;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
         }
 
         /* Responsive */
-        @media (max-width: 650px) {
-            .card {
-                padding: 1.5rem;
+        @media (max-width: 640px) {
+            .top-bar {
+                padding: 0.8rem 1rem;
             }
+
+            .app-title {
+                font-size: 1.2rem;
+            }
+
+            .user-email {
+                max-width: 100px;
+                font-size: 0.75rem;
+            }
+
             .event-item {
-                border-radius: 30px;
-                padding: 1rem 1.2rem;
-            }
-            .event-countdown {
-                min-width: 80px;
-                font-size: 1rem;
-            }
-            .form-grid .field {
-                flex: 1 0 140px;
-            }
-            .status-bar {
+                padding: 0.8rem 1rem;
                 flex-wrap: wrap;
-                gap: 0.5rem;
-                padding: 0.6rem 1rem;
             }
-            .user-info {
+
+            .event-right {
                 width: 100%;
                 justify-content: space-between;
+                margin-top: 0.3rem;
             }
-        }
 
-        /* Utility */
-        .hidden {
-            display: none !important;
+            .event-countdown {
+                font-size: 0.8rem;
+                min-width: 70px;
+                padding: 0.15rem 0.6rem;
+            }
+
+            .fab {
+                bottom: 1.5rem;
+                right: 1.5rem;
+                width: 48px;
+                height: 48px;
+                font-size: 1.6rem;
+            }
+
+            .modal {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .auth-card {
+                padding: 2rem 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app" id="app">
 
-        <!-- Status Bar -->
-        <div class="status-bar" id="statusBar">
-            <div class="status-left">
-                <div class="sync-indicator">
-                    <span class="sync-dot offline" id="syncDot"></span>
-                    <span id="syncStatusText">Offline</span>
-                </div>
-                <span style="font-size:0.8rem;color:#64748b;" id="pendingCount"></span>
-            </div>
-            <div class="user-info hidden" id="userInfo">
+        <!-- TOP BAR -->
+        <div class="top-bar" id="topBar">
+            <div class="app-title">Next<span>App</span></div>
+            <div class="user-section hidden" id="userSection">
+                <span class="sync-dot offline" id="syncDot"></span>
                 <span class="user-email" id="userEmail"></span>
-                <button class="btn-logout" id="logoutBtn">Esci</button>
             </div>
         </div>
 
-        <!-- Auth Section -->
+        <!-- AUTH -->
         <div id="authSection">
-            <div class="card auth-container">
-                <h1 class="auth-title">📅 Appuntamenti</h1>
-                <p class="auth-subtitle">Accedi per gestire i tuoi eventi</p>
-
-                <div class="auth-error" id="authError"></div>
-
-                <form class="auth-form" id="authForm">
-                    <div class="field">
-                        <label for="authEmail">Email</label>
-                        <input type="email" id="authEmail" placeholder="tu@email.com" required>
+            <div class="auth-container">
+                <div class="auth-card">
+                    <h1 class="auth-title">NextApp</h1>
+                    <p class="auth-subtitle">Accedi per gestire i tuoi eventi</p>
+                    <div class="auth-error" id="authError"></div>
+                    <form class="auth-form" id="authForm">
+                        <div class="field">
+                            <label for="authEmail">Email</label>
+                            <input type="email" id="authEmail" placeholder="tu@email.com" required>
+                        </div>
+                        <div class="field">
+                            <label for="authPassword">Password</label>
+                            <input type="password" id="authPassword" placeholder="••••••••" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn" id="authSubmitBtn">Accedi</button>
+                    </form>
+                    <div class="auth-switch">
+                        <span id="authSwitchText">Non hai un account?</span>
+                        <a id="authSwitchLink">Registrati</a>
                     </div>
-                    <div class="field">
-                        <label for="authPassword">Password</label>
-                        <input type="password" id="authPassword" placeholder="••••••••" required minlength="6">
-                    </div>
-                    <button type="submit" class="btn" id="authSubmitBtn">Accedi</button>
-                </form>
-
-                <div class="auth-switch">
-                    <span id="authSwitchText">Non hai un account?</span>
-                    <a id="authSwitchLink">Registrati</a>
                 </div>
             </div>
         </div>
 
-        <!-- App Content -->
-        <div class="app-content" id="appContent">
-            <!-- Event Form -->
-            <div class="card">
-                <div class="flex-between">
-                    <h1 style="font-size:1.8rem;font-weight:600;color:#0b1a33;">
-                        📅 Prossimi appuntamenti
-                        <span class="badge-count" id="eventCounter">0</span>
-                    </h1>
-                    <button class="btn btn-outline" id="clearAllBtn" style="font-size:0.85rem;">🗑️ Rimuovi tutti</button>
-                </div>
-
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="eventName">Nome evento</label>
-                        <input type="text" id="eventName" placeholder="es. Dentista, esame...">
-                    </div>
-                    <div class="field">
-                        <label for="eventDate">Data</label>
-                        <input type="date" id="eventDate">
-                    </div>
-                    <div class="field">
-                        <label for="eventTime">Ora</label>
-                        <input type="time" id="eventTime" value="09:00">
-                    </div>
-                    <button class="btn" id="addEventBtn">➕ Aggiungi</button>
-                </div>
+        <!-- EVENT LIST -->
+        <div class="event-list-container hidden" id="eventListContainer">
+            <div class="empty-state" id="emptyState">
+                <span>📭</span>
+                <p>Nessun appuntamento in agenda.<br>Premi il pulsante + per aggiungerne uno!</p>
             </div>
+            <div id="eventList"></div>
+        </div>
 
-            <!-- Event List -->
-            <div class="card" style="padding-bottom: 1.8rem;">
-                <div id="eventListContainer">
-                    <div class="empty-state" id="emptyState">
-                        <span>📭</span>
-                        <p>Nessun appuntamento in agenda.<br>Aggiungi il tuo primo evento!</p>
-                    </div>
-                    <div class="event-list" id="eventList"></div>
+        <!-- FAB -->
+        <button class="fab hidden" id="fabBtn" title="Aggiungi evento">+</button>
+
+        <!-- MODAL: Event -->
+        <div class="modal-overlay" id="eventModal">
+            <div class="modal">
+                <h2 class="modal-title" id="eventModalTitle">Nuovo Appuntamento</h2>
+                <div class="field">
+                    <label for="modalEventName">Nome evento</label>
+                    <input type="text" id="modalEventName" placeholder="es. Dentista, esame...">
                 </div>
-                <div class="text-muted" style="margin-top:1.2rem;font-size:0.85rem;text-align:right;">
-                    ⏳ aggiornamento automatico ogni minuto
+                <div class="field">
+                    <label for="modalEventDate">Data</label>
+                    <input type="date" id="modalEventDate">
+                </div>
+                <div class="field">
+                    <label for="modalEventTime">Ora</label>
+                    <input type="time" id="modalEventTime" value="09:00">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="modalCancelBtn">Annulla</button>
+                    <button class="btn btn-primary" id="modalSaveBtn">Salva</button>
                 </div>
             </div>
         </div>
+
+        <!-- MODAL: User -->
+        <div class="modal-overlay user-modal" id="userModal">
+            <div class="modal">
+                <div class="modal-title">
+                    👤 Account
+                </div>
+                <div class="user-email-display" id="userModalEmail"></div>
+                <button class="btn-block btn-export" id="exportBtn">📤 Esporta CSV</button>
+                <button class="btn-block btn-import" id="importBtn">📥 Importa CSV</button>
+                <input type="file" id="fileInput" accept=".csv" class="file-input-wrapper">
+                <button class="btn-block btn-logout" id="logoutBtn">🚪 Logout</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
         // ============================================================
-		// 1. SUPABASE CONFIG - Stile che funziona
-		// ============================================================
-		const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co/';  // Con slash finale
-		const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
+        // 1. SUPABASE CONFIG
+        // ============================================================
+        const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co/';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
 
-		const { createClient } = supabase;
-		const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
-		let _currentUser = null;
+        const { createClient } = supabase;
+        const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let _currentUser = null;
+
+        console.log('✅ Supabase client creato');
 
         // ============================================================
-        // 2. STATO APPLICAZIONE
+        // 2. STATO
         // ============================================================
         const STATE = {
             user: null,
-            events: [], // tutti gli eventi dell'utente (sincronizzati)
-            syncQueue: [], // operazioni in attesa di sync
+            events: [],
+            syncQueue: [],
             isOnline: navigator.onLine,
             isSyncing: false,
+            editingId: null, // per edit
         };
 
         // ============================================================
@@ -652,7 +744,6 @@
         const dom = {
             // Auth
             authSection: $('authSection'),
-            appContent: $('appContent'),
             authForm: $('authForm'),
             authEmail: $('authEmail'),
             authPassword: $('authPassword'),
@@ -661,25 +752,35 @@
             authSwitchText: $('authSwitchText'),
             authError: $('authError'),
 
-            // User
-            userInfo: $('userInfo'),
+            // Top bar
+            userSection: $('userSection'),
             userEmail: $('userEmail'),
-            logoutBtn: $('logoutBtn'),
-
-            // Sync status
             syncDot: $('syncDot'),
-            syncStatusText: $('syncStatusText'),
-            pendingCount: $('pendingCount'),
 
             // Events
+            eventListContainer: $('eventListContainer'),
             eventList: $('eventList'),
             emptyState: $('emptyState'),
-            eventCounter: $('eventCounter'),
-            eventName: $('eventName'),
-            eventDate: $('eventDate'),
-            eventTime: $('eventTime'),
-            addEventBtn: $('addEventBtn'),
-            clearAllBtn: $('clearAllBtn'),
+
+            // FAB
+            fabBtn: $('fabBtn'),
+
+            // Event Modal
+            eventModal: $('eventModal'),
+            eventModalTitle: $('eventModalTitle'),
+            modalEventName: $('modalEventName'),
+            modalEventDate: $('modalEventDate'),
+            modalEventTime: $('modalEventTime'),
+            modalSaveBtn: $('modalSaveBtn'),
+            modalCancelBtn: $('modalCancelBtn'),
+
+            // User Modal
+            userModal: $('userModal'),
+            userModalEmail: $('userModalEmail'),
+            exportBtn: $('exportBtn'),
+            importBtn: $('importBtn'),
+            fileInput: $('fileInput'),
+            logoutBtn: $('logoutBtn'),
         };
 
         // ============================================================
@@ -702,18 +803,18 @@
                 const days = Math.floor(abs / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((abs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60));
-                if (days > 0) return `⏳ ${days}g ${hours}h fa`;
-                if (hours > 0) return `⏳ ${hours}h ${minutes}m fa`;
-                if (minutes > 0) return `⏳ ${minutes}m fa`;
-                return `⏳ ora`;
+                if (days > 0) return `${days}g ${hours}h fa`;
+                if (hours > 0) return `${hours}h ${minutes}m fa`;
+                if (minutes > 0) return `${minutes}m fa`;
+                return 'ora fa';
             } else {
                 const days = Math.floor(msDiff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((msDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((msDiff % (1000 * 60 * 60)) / (1000 * 60));
-                if (days > 0) return `⏳ ${days}g ${hours}h`;
-                if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
-                if (minutes > 0) return `⏳ ${minutes}m`;
-                return `⏳ tra poco`;
+                if (days > 0) return `${days}g ${hours}h`;
+                if (hours > 0) return `${hours}h ${minutes}m`;
+                if (minutes > 0) return `${minutes}m`;
+                return 'tra poco';
             }
         }
 
@@ -734,17 +835,8 @@
             });
         }
 
-        function formatDate(dateStr) {
-            if (!dateStr) return '—';
-            return dateStr.replace(/-/g, '/');
-        }
-
-        function isEventActive(ev) {
-            return !ev.deleted_at;
-        }
-
         function getActiveEvents() {
-            return STATE.events.filter(isEventActive);
+            return STATE.events.filter(ev => !ev.deleted_at);
         }
 
         function getSortedEvents() {
@@ -757,7 +849,7 @@
         }
 
         // ============================================================
-        // 5. LOCAL STORAGE (persistenza offline)
+        // 5. LOCAL STORAGE
         // ============================================================
         function loadFromStorage() {
             try {
@@ -786,7 +878,7 @@
         }
 
         // ============================================================
-        // 6. SYNC QUEUE (persistente)
+        // 6. SYNC QUEUE
         // ============================================================
         function addToSyncQueue(operation) {
             STATE.syncQueue.push({
@@ -795,7 +887,6 @@
             });
             saveToStorage();
             updateSyncStatus();
-            // Tenta sync immediata
             processSyncQueue();
         }
 
@@ -829,11 +920,10 @@
                             await syncDeleteEvent(op.data);
                             break;
                     }
-                    // Rimosso con successo
                     removeFromSyncQueue(i);
                 } catch (err) {
-                    console.warn('Sync failed for operation:', op, err);
-                    i++; // passa al prossimo
+                    console.warn('Sync failed:', err);
+                    i++;
                 }
             }
 
@@ -848,7 +938,7 @@
         async function syncEvent(eventData) {
             if (!STATE.user) return;
 
-            const { id, name, date, time, updated_at, deleted_at } = eventData;
+            const { id, name, date, time, updated_at } = eventData;
 
             const payload = {
                 id,
@@ -857,10 +947,8 @@
                 date,
                 time,
                 updated_at: updated_at || new Date().toISOString(),
-                deleted_at: deleted_at || null,
             };
 
-            // Upsert: se esiste, aggiorna; se non esiste, crea
             const { error } = await sb
                 .from('events')
                 .upsert(payload, { onConflict: 'id' });
@@ -871,13 +959,9 @@
         async function syncDeleteEvent(eventData) {
             if (!STATE.user) return;
 
-            // Soft-delete: aggiorna deleted_at
             const { error } = await sb
                 .from('events')
-                .update({
-                    deleted_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                })
+                .delete()
                 .eq('id', eventData.id)
                 .eq('user_id', STATE.user.id);
 
@@ -890,25 +974,17 @@
             const { data, error } = await sb
                 .from('events')
                 .select('*')
-                .eq('user_id', STATE.user.id)
-                .is('deleted_at', null);
+                .eq('user_id', STATE.user.id);
 
             if (error) throw error;
 
-            // Unisce con gli eventi locali (risoluzione conflitti: ultima scrittura vince)
+            // Merge: ultima scrittura vince
             const localMap = {};
-            STATE.events.forEach(ev => {
-                if (isEventActive(ev)) {
-                    localMap[ev.id] = ev;
-                }
-            });
+            STATE.events.forEach(ev => { localMap[ev.id] = ev; });
 
             const remoteMap = {};
-            data.forEach(ev => {
-                remoteMap[ev.id] = ev;
-            });
+            data.forEach(ev => { remoteMap[ev.id] = ev; });
 
-            // Merge: prevale l'updated_at più recente
             const merged = [];
             const allIds = new Set([...Object.keys(localMap), ...Object.keys(remoteMap)]);
 
@@ -917,7 +993,6 @@
                 const remote = remoteMap[id];
 
                 if (local && remote) {
-                    // Conflitto: vince il più recente
                     const localTime = new Date(local.updated_at || 0).getTime();
                     const remoteTime = new Date(remote.updated_at || 0).getTime();
                     merged.push(localTime >= remoteTime ? { ...local } : { ...remote });
@@ -933,7 +1008,7 @@
         }
 
         // ============================================================
-        // 8. CRUD LOCALE (offline-first)
+        // 8. CRUD LOCALE
         // ============================================================
         function createEventLocal(name, date, time) {
             const now = new Date().toISOString();
@@ -950,7 +1025,6 @@
             STATE.events.push(event);
             saveToStorage();
 
-            // Accoda per sync
             addToSyncQueue({
                 type: 'create',
                 data: { ...event },
@@ -973,7 +1047,6 @@
             STATE.events[idx] = updated;
             saveToStorage();
 
-            // Accoda per sync (se non è già in coda)
             const inQueue = STATE.syncQueue.some(op => op.data.id === id && op.type !== 'delete');
             if (!inQueue) {
                 addToSyncQueue({
@@ -991,47 +1064,40 @@
             if (idx === -1) return false;
 
             const event = STATE.events[idx];
-            // Soft-delete
-            STATE.events[idx] = {
-                ...event,
-                deleted_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
-            saveToStorage();
 
-            // Accoda per sync
-            addToSyncQueue({
-                type: 'delete',
-                data: { id },
-            });
-
-            render();
-            return true;
-        }
-
-        function clearAllEventsLocal() {
-            const active = getActiveEvents();
-            if (active.length === 0) return;
-
-            // Soft-delete di tutti
-            const now = new Date().toISOString();
-            active.forEach(ev => {
-                const idx = STATE.events.findIndex(e => e.id === ev.id);
-                if (idx !== -1) {
-                    STATE.events[idx] = {
-                        ...STATE.events[idx],
-                        deleted_at: now,
-                        updated_at: now,
-                    };
-                    addToSyncQueue({
-                        type: 'delete',
-                        data: { id: ev.id },
+            if (STATE.isOnline && STATE.user) {
+                sb.from('events')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', STATE.user.id)
+                    .then(result => {
+                        if (result.error) {
+                            console.error('Delete error:', result.error);
+                            addToSyncQueue({
+                                type: 'delete',
+                                data: { id }
+                            });
+                        } else {
+                            STATE.events = STATE.events.filter(ev => ev.id !== id);
+                            saveToStorage();
+                            render();
+                        }
                     });
-                }
-            });
+            } else {
+                STATE.events[idx] = {
+                    ...event,
+                    deleted_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+                saveToStorage();
+                addToSyncQueue({
+                    type: 'delete',
+                    data: { id }
+                });
+                render();
+            }
 
-            saveToStorage();
-            render();
+            return true;
         }
 
         // ============================================================
@@ -1041,17 +1107,13 @@
             const sorted = getSortedEvents();
             const activeCount = sorted.length;
 
-            // Aggiorna contatore
-            dom.eventCounter.textContent = activeCount;
-
-            // Mostra/nascondi empty state
             if (activeCount === 0) {
                 dom.emptyState.style.display = 'block';
                 dom.eventList.innerHTML = '';
                 return;
-            } else {
-                dom.emptyState.style.display = 'none';
             }
+
+            dom.emptyState.style.display = 'none';
 
             const now = Date.now();
             let html = '';
@@ -1068,20 +1130,21 @@
                     countdownClass = getCountdownClass(msDiff);
                 }
 
-                // Verifica se l'evento è in coda di sync
                 const inQueue = STATE.syncQueue.some(op => op.data.id === ev.id);
                 const syncingClass = inQueue ? 'syncing' : '';
 
                 html += `
                     <div class="event-item ${syncingClass}" data-id="${ev.id}">
                         <div class="event-info">
-                            <span class="event-name">${escapeHtml(ev.name || 'Evento')}</span>
-                            <span class="event-datetime">📆 ${formatDate(ev.date)} · ${ev.time || '—'}</span>
-                            ${inQueue ? '<span class="sync-status">⏳ in attesa</span>' : ''}
+                            <div class="event-name">${escapeHtml(ev.name || 'Evento')}</div>
+                            <div class="event-datetime">📆 ${ev.date || '—'} · ${ev.time || '—'}</div>
                         </div>
-                        <div class="event-countdown ${countdownClass}">${countdownText}</div>
-                        <div class="event-actions">
-                            <button class="btn-icon delete" data-id="${ev.id}" title="Rimuovi evento">✕</button>
+                        <div class="event-right">
+                            <div class="event-countdown ${countdownClass}">${countdownText}</div>
+                            <div class="event-actions">
+                                <button class="btn-icon edit" data-id="${ev.id}" title="Modifica">✏️</button>
+                                <button class="btn-icon delete" data-id="${ev.id}" title="Rimuovi">✕</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1089,7 +1152,16 @@
 
             dom.eventList.innerHTML = html;
 
-            // Attach delete listeners
+            // Edit listeners
+            document.querySelectorAll('.event-item .edit').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = this.getAttribute('data-id');
+                    if (id) openEditModal(id);
+                });
+            });
+
+            // Delete listeners
             document.querySelectorAll('.event-item .delete').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -1102,16 +1174,13 @@
         }
 
         // ============================================================
-        // 10. SYNC STATUS UI
+        // 10. SYNC STATUS
         // ============================================================
         function updateSyncStatus() {
             const dot = dom.syncDot;
-            const text = dom.syncStatusText;
 
             if (!STATE.user) {
                 dot.className = 'sync-dot offline';
-                text.textContent = 'Non autenticato';
-                dom.pendingCount.textContent = '';
                 return;
             }
 
@@ -1119,25 +1188,135 @@
 
             if (pending > 0 && STATE.isOnline) {
                 dot.className = 'sync-dot syncing';
-                text.textContent = `Sincronizzazione (${pending} in coda)`;
-                dom.pendingCount.textContent = `⏳ ${pending} in attesa`;
             } else if (pending > 0 && !STATE.isOnline) {
                 dot.className = 'sync-dot offline';
-                text.textContent = `Offline - ${pending} in coda`;
-                dom.pendingCount.textContent = `⏳ ${pending} in attesa`;
             } else if (STATE.isOnline) {
                 dot.className = 'sync-dot online';
-                text.textContent = 'Online · sincronizzato';
-                dom.pendingCount.textContent = '';
             } else {
                 dot.className = 'sync-dot offline';
-                text.textContent = 'Offline';
-                dom.pendingCount.textContent = '';
             }
         }
 
         // ============================================================
-        // 11. AUTH
+        // 11. MODAL FUNCTIONS
+        // ============================================================
+        function openAddModal() {
+            STATE.editingId = null;
+            dom.eventModalTitle.textContent = 'Nuovo Appuntamento';
+            dom.modalEventName.value = '';
+            dom.modalEventDate.value = new Date().toISOString().split('T')[0];
+            dom.modalEventTime.value = '09:00';
+            dom.eventModal.classList.add('active');
+            dom.modalEventName.focus();
+        }
+
+        function openEditModal(id) {
+            const ev = STATE.events.find(e => e.id === id);
+            if (!ev) return;
+
+            STATE.editingId = id;
+            dom.eventModalTitle.textContent = 'Modifica Appuntamento';
+            dom.modalEventName.value = ev.name;
+            dom.modalEventDate.value = ev.date;
+            dom.modalEventTime.value = ev.time || '09:00';
+            dom.eventModal.classList.add('active');
+            dom.modalEventName.focus();
+        }
+
+        function closeModal() {
+            dom.eventModal.classList.remove('active');
+            dom.userModal.classList.remove('active');
+            STATE.editingId = null;
+        }
+
+        function saveEventFromModal() {
+            const name = dom.modalEventName.value.trim();
+            const date = dom.modalEventDate.value;
+            const time = dom.modalEventTime.value;
+
+            if (!name) {
+                alert('Inserisci un nome per l\'evento.');
+                return;
+            }
+            if (!date) {
+                alert('Seleziona una data valida.');
+                return;
+            }
+
+            if (STATE.editingId) {
+                updateEventLocal(STATE.editingId, { name, date, time });
+            } else {
+                createEventLocal(name, date, time);
+            }
+
+            closeModal();
+        }
+
+        // ============================================================
+        // 12. CSV IMPORT/EXPORT
+        // ============================================================
+        function exportCSV() {
+            const events = getSortedEvents();
+            if (events.length === 0) {
+                alert('Nessun evento da esportare.');
+                return;
+            }
+
+            const headers = ['Nome', 'Data', 'Ora'];
+            const rows = events.map(ev => [ev.name, ev.date, ev.time || '']);
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `appuntamenti_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function importCSV(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n').filter(line => line.trim());
+                    if (lines.length < 2) {
+                        alert('Il file CSV è vuoto o non valido.');
+                        return;
+                    }
+
+                    // Salta header
+                    const dataLines = lines.slice(1);
+                    let imported = 0;
+
+                    for (const line of dataLines) {
+                        const parts = line.split(',').map(s => s.trim());
+                        if (parts.length >= 2) {
+                            const name = parts[0];
+                            const date = parts[1];
+                            const time = parts[2] || '09:00';
+
+                            if (name && date) {
+                                createEventLocal(name, date, time);
+                                imported++;
+                            }
+                        }
+                    }
+
+                    alert(`Importati ${imported} eventi con successo!`);
+                    closeModal();
+                } catch (err) {
+                    alert('Errore nella lettura del file CSV: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============================================================
+        // 13. AUTH
         // ============================================================
         let isLoginMode = true;
 
@@ -1183,18 +1362,15 @@
                     return;
                 }
 
-                // Successo
                 dom.authError.classList.remove('show');
                 dom.authSubmitBtn.disabled = false;
                 dom.authSubmitBtn.textContent = isLoginMode ? 'Accedi' : 'Registrati';
 
-                // Se è registrazione, potrebbe essere conferma email
                 if (!isLoginMode && result.data?.user?.identities?.length === 0) {
                     showAuthError('Utente già esistente. Prova ad accedere.');
                     return;
                 }
 
-                // Login automatico (se signUp con conferma email, potrebbe non essere automatico)
                 if (result.data?.user) {
                     await onAuthSuccess(result.data.user);
                 }
@@ -1209,64 +1385,58 @@
 
         async function onAuthSuccess(user) {
             STATE.user = user;
+            _currentUser = user;
+
             dom.authSection.style.display = 'none';
-            dom.appContent.classList.add('active');
-            dom.userInfo.classList.remove('hidden');
+            dom.eventListContainer.classList.remove('hidden');
+            dom.fabBtn.classList.remove('hidden');
+            dom.userSection.classList.remove('hidden');
             dom.userEmail.textContent = user.email;
 
-            // Carica dati
-            await loadUserData();
-
-            // Processa sync
-            processSyncQueue();
-
-            updateSyncStatus();
-        }
-
-        async function loadUserData() {
-            // Carica da localStorage
             loadFromStorage();
+            updateSyncStatus();
 
-            // Tenta fetch remoto
             if (STATE.isOnline) {
                 try {
                     await fetchRemoteEvents();
                 } catch (err) {
-                    console.warn('Impossibile caricare dati remoti:', err);
+                    console.warn('Fetch remote error:', err);
                 }
             }
 
             render();
             updateSyncStatus();
+            processSyncQueue();
         }
 
         function handleLogout() {
             if (confirm('Sei sicuro di voler uscire?')) {
                 STATE.user = null;
+                _currentUser = null;
                 STATE.events = [];
                 STATE.syncQueue = [];
                 localStorage.removeItem('app_events');
                 localStorage.removeItem('app_sync_queue');
                 dom.authSection.style.display = 'block';
-                dom.appContent.classList.remove('active');
-                dom.userInfo.classList.add('hidden');
+                dom.eventListContainer.classList.add('hidden');
+                dom.fabBtn.classList.add('hidden');
+                dom.userSection.classList.add('hidden');
+                dom.userModal.classList.remove('active');
                 render();
                 updateSyncStatus();
             }
         }
 
         // ============================================================
-        // 12. NETWORK EVENTS
+        // 14. NETWORK EVENTS
         // ============================================================
         function handleNetworkChange() {
             STATE.isOnline = navigator.onLine;
             updateSyncStatus();
 
             if (STATE.isOnline && STATE.user) {
-                // Riconnessione: sync e fetch
                 processSyncQueue();
                 if (STATE.syncQueue.length === 0) {
-                    // Se non c'è coda, fetch aggiornamenti
                     fetchRemoteEvents().then(() => {
                         render();
                     }).catch(console.warn);
@@ -1275,15 +1445,9 @@
         }
 
         // ============================================================
-        // 13. INIT
+        // 15. INIT
         // ============================================================
         async function init() {
-            // Set default date
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(now.getDate() + 1);
-            dom.eventDate.value = tomorrow.toISOString().split('T')[0];
-
             // Auth switch
             dom.authSwitchLink.addEventListener('click', () => {
                 setAuthMode(!isLoginMode);
@@ -1292,77 +1456,80 @@
             // Auth form
             dom.authForm.addEventListener('submit', handleAuthSubmit);
 
+            // FAB
+            dom.fabBtn.addEventListener('click', openAddModal);
+
+            // Modal events
+            dom.modalSaveBtn.addEventListener('click', saveEventFromModal);
+            dom.modalCancelBtn.addEventListener('click', closeModal);
+            dom.eventModal.addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+
+            // User section click
+            dom.userSection.addEventListener('click', function() {
+                if (STATE.user) {
+                    dom.userModalEmail.textContent = STATE.user.email;
+                    dom.userModal.classList.add('active');
+                }
+            });
+
+            // User modal close
+            dom.userModal.addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+
+            // Export
+            dom.exportBtn.addEventListener('click', function() {
+                exportCSV();
+                closeModal();
+            });
+
+            // Import
+            dom.importBtn.addEventListener('click', function() {
+                dom.fileInput.click();
+            });
+
+            dom.fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    importCSV(this.files[0]);
+                    this.value = '';
+                }
+            });
+
             // Logout
             dom.logoutBtn.addEventListener('click', handleLogout);
 
-            // Add event
-            dom.addEventBtn.addEventListener('click', () => {
-                const name = dom.eventName.value.trim();
-                const date = dom.eventDate.value;
-                const time = dom.eventTime.value;
-
-                if (!name) {
-                    alert('Inserisci un nome per l\'evento.');
-                    return;
-                }
-                if (!date) {
-                    alert('Seleziona una data valida.');
-                    return;
-                }
-
-                createEventLocal(name, date, time);
-                dom.eventName.value = '';
-                dom.eventName.focus();
-            });
-
-            dom.eventName.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    dom.addEventBtn.click();
-                }
-            });
-
-            // Clear all
-            dom.clearAllBtn.addEventListener('click', () => {
-                const active = getActiveEvents();
-                if (active.length === 0) return;
-                if (confirm('Rimuovere TUTTI gli appuntamenti?')) {
-                    clearAllEventsLocal();
-                }
-            });
-
-            // Network events
+            // Network
             window.addEventListener('online', handleNetworkChange);
             window.addEventListener('offline', handleNetworkChange);
 
-            // Periodic sync fallback (ogni 20s)
+            // Periodic updates
             setInterval(() => {
                 if (STATE.user && STATE.isOnline) {
                     processSyncQueue();
                 }
-                // Aggiorna countdown ogni minuto
                 render();
             }, 20000);
 
-            // Aggiorna countdown visivo ogni 10s
             setInterval(() => {
                 render();
             }, 10000);
 
-            // Check session esistente
+            // Check session
             const { data: { session } } = await sb.auth.getSession();
             if (session?.user) {
                 await onAuthSuccess(session.user);
             } else {
                 dom.authSection.style.display = 'block';
-                dom.appContent.classList.remove('active');
-                dom.userInfo.classList.add('hidden');
+                dom.eventListContainer.classList.add('hidden');
+                dom.fabBtn.classList.add('hidden');
+                dom.userSection.classList.add('hidden');
                 setAuthMode(true);
                 updateSyncStatus();
             }
         }
 
-        // Avvia app
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
