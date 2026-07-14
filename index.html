@@ -625,20 +625,16 @@
 
     <script>
         // ============================================================
-        // 1. SUPABASE CONFIG
-        // ============================================================
-        // 🔑 SOSTITUISCI CON LE TUE CHIAVI (sono pubbliche per design, RLS protegge i dati)
-        const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
+		// 1. SUPABASE CONFIG - Stile che funziona
+		// ============================================================
+		const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co/';  // Con slash finale
+		const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
 
-        // Crea il client Supabase in modo sicuro (evita duplicati)
-		if (!window._supabaseClient) {
-			window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-		}
-		const supabase = window._supabaseClient;
+		const { createClient } = supabase;
+		const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+		let _currentUser = null;
 
-		// Verifica che il client sia stato creato correttamente
-		console.log('✅ Supabase client inizializzato:', !!supabase);
+		console.log('✅ Supabase client creato:', !!sb);
 
         // ============================================================
         // 2. STATO APPLICAZIONE
@@ -1177,9 +1173,9 @@
             try {
                 let result;
                 if (isLoginMode) {
-                    result = await supabase.auth.signInWithPassword({ email, password });
+                    result = await sb.auth.signInWithPassword({ email, password });
                 } else {
-                    result = await supabase.auth.signUp({ email, password });
+                    result = await sb.auth.signUp({ email, password });
                 }
 
                 if (result.error) {
@@ -1356,7 +1352,7 @@
             }, 10000);
 
             // Check session esistente
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await sb.auth.getSession();
             if (session?.user) {
                 await onAuthSuccess(session.user);
             } else {
