@@ -631,7 +631,14 @@
         const SUPABASE_URL = 'https://hqvowaczegebxmkkkhkb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhxdm93YWN6ZWdlYnhta2traGtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMjkwNzgsImV4cCI6MjA5OTYwNTA3OH0.IDAsqv9vYW2IWxONaLb0BcAci5E-BRZ9F4OZUt9uzi0';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Crea il client Supabase in modo sicuro (evita duplicati)
+		if (!window._supabaseClient) {
+			window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+		}
+		const supabase = window._supabaseClient;
+
+		// Verifica che il client sia stato creato correttamente
+		console.log('✅ Supabase client inizializzato:', !!supabase);
 
         // ============================================================
         // 2. STATO APPLICAZIONE
