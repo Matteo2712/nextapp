@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "dev.pages.nextapp_d6o.twa",
+        "sha256_cert_fingerprints": ["CB:26:6F:CC:AE:2C:5F:DC:BF:66:FC:E0:09:5F:2A:7C:09:1D:19:53:2A:5D:0E:FA:B5:AB:25:E2:F7:D4:C5:40"]
+      }
+    }]
