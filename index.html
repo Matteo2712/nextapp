@@ -634,8 +634,6 @@
 		const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 		let _currentUser = null;
 
-		console.log('✅ Supabase client creato:', !!sb);
-
         // ============================================================
         // 2. STATO APPLICAZIONE
         // ============================================================
@@ -863,7 +861,7 @@
             };
 
             // Upsert: se esiste, aggiorna; se non esiste, crea
-            const { error } = await supabase
+            const { error } = await sb
                 .from('events')
                 .upsert(payload, { onConflict: 'id' });
 
@@ -874,7 +872,7 @@
             if (!STATE.user) return;
 
             // Soft-delete: aggiorna deleted_at
-            const { error } = await supabase
+            const { error } = await sb
                 .from('events')
                 .update({
                     deleted_at: new Date().toISOString(),
@@ -889,7 +887,7 @@
         async function fetchRemoteEvents() {
             if (!STATE.user) return;
 
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('events')
                 .select('*')
                 .eq('user_id', STATE.user.id)
