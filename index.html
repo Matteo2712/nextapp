@@ -645,7 +645,19 @@ function parseCsvLine(line){
 
 // ---------- Service worker ----------
 if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if(newWorker.state === 'activated'){
+            // Nuova versione attiva: ricarica per usarla subito
+            window.location.reload();
+          }
+        });
+      });
+    }).catch(()=>{});
+  });
 }
 
 initAuth();
