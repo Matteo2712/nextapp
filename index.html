@@ -196,6 +196,7 @@ header{
 <div class="overlay" id="userMenuOverlay">
   <div class="sheet">
     <h2>Account</h2>
+    <div class="menu-item" id="menuNotify"><i class="ti ti-bell"></i> <span id="notifyLabel">Attiva notifiche</span></div>
     <div class="menu-item" id="menuHistory"><i class="ti ti-history"></i> Storico / Cestino</div>
     <div class="menu-item" id="menuExport"><i class="ti ti-file-export"></i> Esporta CSV</div>
     <div class="menu-item" id="menuImport"><i class="ti ti-file-import"></i> Importa CSV</div>
@@ -283,6 +284,7 @@ function showApp(){
   $('app').classList.remove('hidden');
   $('userEmail').textContent = _currentUser.email;
   updateOnlineStatus();
+  updateNotifyMenuLabel();
   loadEvents();
 }
 
@@ -642,6 +644,67 @@ function parseCsvLine(line){
   out.push(cur);
   return out;
 }
+
+// ---------- Notifiche push reali (anche ad app chiusa) ----------
+const VAPID_PUBLIC_KEY = 'BCW9_gI5CgibVoGzK3-O0Fh9KvhuuZXW6KSQEsQ9wDJhyAnlK0zJPdL-qyJ8IPnLSuD47tbA2OypA8j1ntIzjwg';
+
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i=0;i<rawData.length;i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function updateNotifyMenuLabel(){
+  const label = $('notifyLabel');
+  if(!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)){
+    label.textContent = 'Notifiche non supportate';
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    label.textContent = 'Notifiche bloccate (vedi impostazioni sito)';
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  label.textContent = sub ? 'Notifiche attive su questo dispositivo ✓' : 'Attiva notifiche su questo dispositivo';
+}
+
+async function subscribeToPush(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)){
+    alert('Il tuo browser non supporta le notifiche push.');
+    return;
+  }
+  if(Notification.permission === 'default'){
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') { await updateNotifyMenuLabel(); return; }
+  }
+  if(Notification.permission === 'denied'){
+    alert('Le notifiche sono bloccate. Per riattivarle vai nelle impostazioni del sito/app del telefono, alla voce Notifiche.');
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub){
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  }
+  const raw = sub.toJSON();
+  const { error } = await sb.from('push_subscriptions').upsert({
+    user_id: _currentUser.id,
+    endpoint: raw.endpoint,
+    p256dh: raw.keys.p256dh,
+    auth: raw.keys.auth
+  }, { onConflict: 'endpoint' });
+  if(error){ alert('Errore attivazione notifiche: ' + error.message); return; }
+  await updateNotifyMenuLabel();
+}
+
+$('menuNotify').addEventListener('click', subscribeToPush);
 
 // ---------- Service worker ----------
 if('serviceWorker' in navigator){
